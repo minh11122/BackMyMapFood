@@ -1,6 +1,7 @@
 const axios = require("axios");
+require("dotenv").config(); // load biến môi trường từ .env
 
-const BREVO_API_KEY = "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";
+const BREVO_API_KEY = process.env.BREVO_API_KEY; // lấy từ .env
 
 const sendMail = async ({ to, subject, html }) => {
   try {

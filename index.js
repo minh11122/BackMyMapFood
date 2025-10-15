@@ -12,17 +12,6 @@ app.use("/api", routes);
 
 connectDB();
 
-app.get("/test-mail", async (req, res) => {
-  const { sendMail } = require("./configs/mail.config");
-  const result = await sendMail({
-    to: "email_của_bạn@gmail.com",
-    subject: "Test gửi mail Brevo HTTP",
-    html: "<h1>Thử gửi mail thành công ✅</h1>",
-  });
-  res.json(result);
-});
-
-
 
 const PORT = process.env.PORT;
 const HOST = process.env.HOSTNAME;
