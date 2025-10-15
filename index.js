@@ -13,17 +13,14 @@ app.use("/api", routes);
 connectDB();
 
 app.get("/test-mail", async (req, res) => {
-  const { sendMail } = require("./configs/mail.config"); // import Brevo SMTP
-
+  const { sendMail } = require("./configs/mail.config");
   const result = await sendMail({
-    to: "your_email@gmail.com", // Thay bằng email của bạn
-    subject: "Test gửi mail qua Brevo SMTP",
-    html: "<h1>Xin chào từ MyMapFood!</h1><p>Mail này gửi qua Brevo SMTP ✅</p>",
+    to: "email_của_bạn@gmail.com",
+    subject: "Test gửi mail Brevo HTTP",
+    html: "<h1>Thử gửi mail thành công ✅</h1>",
   });
-
   res.json(result);
 });
-
 
 
 

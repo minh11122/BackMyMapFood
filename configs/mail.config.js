@@ -1,29 +1,28 @@
-const nodemailer = require("nodemailer");
+const axios = require("axios");
 
-// Cấu hình SMTP Brevo
-const transporter = nodemailer.createTransport({
-  host: "smtp-relay.brevo.com",
-  port: 587,
-  secure: false, // false vì port 587
-  auth: {
-    user: "995f9b001@smtp-brevo.com", // login SMTP Brevo
-    pass: "8YSnFhkwyx7fR2bN",       // mật khẩu chính SMTP
-  },
-});
+const BREVO_API_KEY = "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";
 
-// Hàm gửi mail
 const sendMail = async ({ to, subject, html }) => {
   try {
-    const info = await transporter.sendMail({
-      from: '"Hệ thống của chúng tôi" <995f9b001@smtp-brevo.com>',
-      to,
-      subject,
-      html,
-    });
-    console.log("✅ Email sent:", info.messageId);
-    return { success: true, data: info };
+    const res = await axios.post(
+      "https://api.brevo.com/v3/smtp/email",
+      {
+        sender: { name: "MyMapFood", email: "995f9b001@smtp-brevo.com" },
+        to: [{ email: to }],
+        subject,
+        htmlContent: html,
+      },
+      {
+        headers: {
+          "api-key": BREVO_API_KEY,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    console.log("✅ Email sent via Brevo API", res.data);
+    return { success: true, data: res.data };
   } catch (error) {
-    console.error("❌ Send mail failed:", error);
+    console.error("❌ Send mail via API failed", error.response?.data || error.message);
     return { success: false, error: error.message };
   }
 };
