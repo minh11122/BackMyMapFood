@@ -116,29 +116,28 @@ exports.createOrder = async (req, res) => {
 
 exports.getOrders = async (req, res) => {
   try {
-    const orders = await Order.find()
-      // 👤 Lấy tên + sdt + avatar người đặt
+    const { userId } = req.query; // 👈 lấy từ query
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: "Thiếu userId trong query (vd: ?userId=...)",
+      });
+    }
+
+    const orders = await Order.find({ customer: userId })
       .populate("customer", "full_name phone avatar_url")
-
-      // 🏪 Lấy tên + địa chỉ + ảnh cửa hàng
       .populate("shop", "name address img")
-
-      // 📍 Địa chỉ giao hàng
       .populate("deliveryAddress")
-
-      // 🍔 Món ăn trong cartItems (kèm ảnh + giá)
       .populate({
         path: "cartItems",
-        populate: {
-          path: "food",
-          select: "name price image_url", // ✅ Đúng với model Food
-        },
+        populate: { path: "food", select: "name price image_url" },
       })
       .sort({ createdAt: -1 });
 
     return res.status(200).json({
       success: true,
-      message: "Danh sách đơn hàng",
+      message: "Danh sách đơn hàng của người dùng",
       data: orders,
     });
   } catch (err) {
@@ -150,6 +149,7 @@ exports.getOrders = async (req, res) => {
     });
   }
 };
+
 
 exports.cancelOrder = async (req, res) => {
   const orderId = req.params.id;
