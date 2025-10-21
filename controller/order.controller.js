@@ -9,8 +9,8 @@ exports.createOrder = async (req, res) => {
     const {
       customer,
       shop,
-      deliveryAddress, // string
-      cartItems, // mảng cartId
+      deliveryAddress,
+      cartItems,
       voucher,
       discountAmount,
       subtotal,
@@ -18,7 +18,10 @@ exports.createOrder = async (req, res) => {
       totalAmount,
       paymentMethod,
       note,
-      gps, // optional: [lng, lat]
+      gps,
+      receiverName,
+      receiverPhone,
+      receiverEmail,
     } = req.body;
 
     // 🔍 Kiểm tra dữ liệu bắt buộc
@@ -54,9 +57,16 @@ exports.createOrder = async (req, res) => {
     }
 
     // 🛒 Lấy cartItem và cập nhật trạng thái CHECKOUT
-    const cartDocs = await CartItem.find({ _id: { $in: cartItems }, user: customer, status: "ACTIVE" });
+    const cartDocs = await CartItem.find({
+      _id: { $in: cartItems },
+      user: customer,
+      status: "ACTIVE",
+    });
     if (!cartDocs.length)
-      return res.status(400).json({ success: false, message: "Không tìm thấy món trong giỏ hoặc đã checkout" });
+      return res.status(400).json({
+        success: false,
+        message: "Không tìm thấy món trong giỏ hoặc đã checkout",
+      });
 
     // Update trạng thái cartItems
     await CartItem.updateMany(
@@ -82,6 +92,9 @@ exports.createOrder = async (req, res) => {
       note: note || null,
       status: "PENDING_PAYMENT",
       paymentStatus: paymentMethod === "COD" ? "COD_PENDING" : "UNPAID",
+      receiverName,
+      receiverPhone,
+      receiverEmail,
     });
 
     console.log("✅ Đơn hàng đã tạo:", order._id);
@@ -101,16 +114,25 @@ exports.createOrder = async (req, res) => {
   }
 };
 
-
 exports.getOrders = async (req, res) => {
   try {
     const orders = await Order.find()
-      .populate("customer", "name email")
-      .populate("shop", "name address")
+      // 👤 Lấy tên + sdt + avatar người đặt
+      .populate("customer", "full_name phone avatar_url")
+
+      // 🏪 Lấy tên + địa chỉ + ảnh cửa hàng
+      .populate("shop", "name address img")
+
+      // 📍 Địa chỉ giao hàng
       .populate("deliveryAddress")
+
+      // 🍔 Món ăn trong cartItems (kèm ảnh + giá)
       .populate({
         path: "cartItems",
-        populate: { path: "food", select: "name price" },
+        populate: {
+          path: "food",
+          select: "name price image_url", // ✅ Đúng với model Food
+        },
       })
       .sort({ createdAt: -1 });
 
@@ -136,20 +158,31 @@ exports.cancelOrder = async (req, res) => {
   try {
     const order = await Order.findById(orderId);
     if (!order) {
-      return res.status(404).json({ success: false, message: "Không tìm thấy đơn hàng" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy đơn hàng" });
     }
 
     if (order.status !== "PENDING_PAYMENT") {
-      return res.status(400).json({ success: false, message: "Chỉ đơn hàng đang chờ thanh toán mới có thể hủy" });
+      return res.status(400).json({
+        success: false,
+        message: "Chỉ đơn hàng đang chờ thanh toán mới có thể hủy",
+      });
     }
 
     order.status = "CANCELLED";
     order.cancelReason = cancelReason || "Người dùng hủy";
     await order.save();
 
-    return res.status(200).json({ success: true, message: "Hủy đơn hàng thành công", data: order });
+    return res
+      .status(200)
+      .json({ success: true, message: "Hủy đơn hàng thành công", data: order });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ success: false, message: "Lỗi server khi hủy đơn hàng", error: err.message });
+    return res.status(500).json({
+      success: false,
+      message: "Lỗi server khi hủy đơn hàng",
+      error: err.message,
+    });
   }
 };

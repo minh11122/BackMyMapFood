@@ -22,6 +22,7 @@ const orderSchema = new mongoose.Schema(
       required: true,
     },
 
+    // 🛒 Giỏ hàng
     cartItems: [
       { type: mongoose.Schema.Types.ObjectId, ref: "CartItem", required: true },
     ],
@@ -37,6 +38,11 @@ const orderSchema = new mongoose.Schema(
     subtotal: Number,
     shippingFee: { type: Number, default: 0 },
     totalAmount: Number,
+
+    // ✅ Thêm thông tin người nhận đơn
+    receiverName: { type: String, required: true },
+    receiverPhone: { type: String, required: true },
+    receiverEmail: { type: String, default: null },
 
     status: {
       type: String,
